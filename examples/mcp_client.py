@@ -1,5 +1,5 @@
 # Python code to test calling the tools through the mcp server
-# Usage: MCP_URL=http://localhost:8030/mcp MCP_API_KEY=mcp_... MCP_SERVER=linux-01 python examples/mcp_client.py
+# Usage: MCP_URL=http://localhost:8000/mcp MCP_API_KEY=mcp_... MCP_SERVER=linux-01 python examples/mcp_client.py
 
 import asyncio
 import os

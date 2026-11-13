@@ -1,5 +1,5 @@
 # Health (no auth)
-curl http://localhost:8030/health
+curl http://localhost:8000/health
 
 # Initialize an MCP session (auth via Bearer or X-API-Key header; query-string keys are NOT accepted)
 curl -i -X POST http://localhost:8010/mcp \

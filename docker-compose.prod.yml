@@ -4,12 +4,12 @@
 #   docker compose -f docker-compose.prod.yml up -d
 services:
   linux-mcp:
-    image: ${APP_IMAGE:-ghcr.io/arabsat-hub/linux-mcp:latest}
+    image: ${APP_IMAGE:-ghcr.io/techdive76/linux-mcp:latest}
     container_name: linux-mcp
     pull_policy: always
     restart: unless-stopped
     ports:
-      - "${HOST_PORT:-8030}:8000"
+      - "${HOST_PORT:-8000}:8000"
     environment:
       SERVERS_CONFIG: /config/servers.yaml
       CLIENTS_CONFIG: /config/clients.yaml

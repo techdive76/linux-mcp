@@ -16,6 +16,17 @@ is written to a structured JSON audit log.
 └──────────────┘                    └──────────────────────┘                    └──────────────┘
 ```
 
+> [!WARNING]
+> **The server speaks plain HTTP.** In production, always expose it over **HTTPS** behind a
+> TLS-terminating reverse proxy such as nginx (see
+> [Running behind a reverse proxy](#running-behind-a-reverse-proxy)). Over plain HTTP, API keys
+> and command output travel unencrypted.
+
+> [!CAUTION]
+> **This service gives an AI direct administrative access to your servers.** Do not expose it
+> to the public internet. Run it only inside your trusted network, and allow only the clients
+> that need it. See [Security](#security).
+
 ## Features
 
 - **Four MCP tools**: `list_servers`, `run_read_command`, `run_write_command`, `get_system_snapshot`.
@@ -51,7 +62,7 @@ is written to a structured JSON audit log.
 9. [Logging and auditing](#logging-and-auditing)
 10. [Running without Docker](#running-without-docker)
 11. [Development](#development)
-12. [Security notes](#security-notes)
+12. [Security](#security)
 
 ---
 
@@ -66,7 +77,7 @@ is written to a structured JSON audit log.
 ### 1. Get the project
 
 ```bash
-git clone https://github.com/arabsat-hub/linux-mcp.git
+git clone https://github.com/techdive76/linux-mcp.git
 cd linux-mcp
 ```
 
@@ -94,7 +105,7 @@ procedure is in [Step-by-step: add a new server](#step-by-step-add-a-new-server)
 
 ```bash
 # Using the published image (no local Python needed)
-docker run --rm ghcr.io/arabsat-hub/linux-mcp:latest python -m linux_mcp.auth
+docker run --rm ghcr.io/techdive76/linux-mcp:latest python -m linux_mcp.auth
 
 # Or locally
 pip install -e . && linux-mcp-keygen
@@ -131,21 +142,21 @@ docker compose up -d --build
 
 ```bash
 docker run -d --name linux-mcp --restart unless-stopped \
-  -p 8030:8000 \
+  -p 8000:8000 \
   -v "$PWD/config:/config:ro" \
   -v "$PWD/ssh:/ssh:ro" \
   -e LOG_LEVEL=INFO \
-  ghcr.io/arabsat-hub/linux-mcp:latest
+  ghcr.io/techdive76/linux-mcp:latest
 ```
 
 ### 7. Verify
 
 ```bash
-curl http://localhost:8030/health          # → {"status":"ok"}
+curl http://localhost:8000/health          # → {"status":"ok"}
 docker compose logs -f                     # shows "Loaded N server(s)" and "Loaded N client(s)"
 ```
 
-The MCP endpoint is now at `http://<docker-host>:8030/mcp`.
+The MCP endpoint is now at `http://<docker-host>:8000/mcp`.
 
 > Configuration is read **once at startup**. After editing `config/*.yaml` or `.env`, run
 > `docker compose restart` (or `up -d` after `.env` changes).
@@ -182,8 +193,8 @@ There are two groups of variables:
 
 | Variable | Default | Description |
 |---|---|---|
-| `APP_IMAGE` | `ghcr.io/arabsat-hub/linux-mcp:latest` | Image used by `docker-compose.prod.yml`. Point it at your own registry or a pinned tag (for example `:sha-abc1234`). |
-| `HOST_PORT` | `8030` (prod), `8000` (dev) | Port published on the Docker host. The container always listens on `8000`. |
+| `APP_IMAGE` | `ghcr.io/techdive76/linux-mcp:latest` | Image used by `docker-compose.prod.yml`. Point it at your own registry or a pinned tag (for example `:sha-abc1234`). |
+| `HOST_PORT` | `8000` | Port published on the Docker host. The container always listens on `8000`. |
 | `CONFIG_DIR` | `./config` | Host directory with `servers.yaml` and `clients.yaml`, mounted read-only at `/config`. |
 | `SSH_DIR` | `./ssh` | Host directory with private keys and optional `known_hosts`, mounted read-only at `/ssh`. |
 
@@ -203,7 +214,7 @@ There are two groups of variables:
 | `LOG_FILE_MAX_BYTES` | `10485760` | Rotation size for `LOG_FILE` (10 MB). |
 | `LOG_FILE_BACKUPS` | `5` | Number of rotated `LOG_FILE` backups to keep. |
 | `MCP_HOST` | `0.0.0.0` | Bind address. Only used when started with the `linux-mcp` command; the Docker image always binds `0.0.0.0:8000`. |
-| `MCP_PORT` | `8030` | Bind port. Only used when started with the `linux-mcp` command. |
+| `MCP_PORT` | `8000` | Bind port. Only used when started with the `linux-mcp` command. |
 
 `LOG_FILE`, `LOG_FILE_MAX_BYTES` and `LOG_FILE_BACKUPS` are not passed through by the compose
 files. To use them, add them to the `environment:` section and mount a writable volume:
@@ -257,7 +268,7 @@ servers:
 | `host` | yes | none | IP address or hostname to SSH to. **Never exposed to clients.** |
 | `description` | no | `""` | Shown to the AI in `list_servers`. Describe the server's role (for example "Oracle DB, PROD") so the model picks the right one. |
 | `allow_write` | no | `false` | Enables `run_write_command` on this server. |
-| `username` | no | `root` | SSH user. A dedicated, least-privileged user is recommended (see [Security notes](#security-notes)). |
+| `username` | no | `root` | SSH user. A dedicated, least-privileged user is recommended (see [Security](#security)). |
 | `port` | no | `22` | SSH port. |
 | `key_file` | no | `id_rsa` | Private key file name in `SSH_KEY_DIR`, or an absolute path inside the container. |
 | `timeout` | no | `30` | Seconds for the SSH connection and command execution. |
@@ -397,7 +408,7 @@ Ask your assistant *"List the available Linux servers"* and then *"Check disk us
 web-prod01"*. You can also use the Python example:
 
 ```bash
-MCP_URL=http://localhost:8030/mcp MCP_API_KEY=mcp_… MCP_SERVER=web-prod01 \
+MCP_URL=http://localhost:8000/mcp MCP_API_KEY=mcp_… MCP_SERVER=web-prod01 \
   python examples/mcp_client.py
 ```
 
@@ -419,7 +430,7 @@ MCP_URL=http://localhost:8030/mcp MCP_API_KEY=mcp_… MCP_SERVER=web-prod01 \
 ### Step 1: Generate an API key
 
 ```bash
-docker run --rm ghcr.io/arabsat-hub/linux-mcp:latest python -m linux_mcp.auth
+docker run --rm ghcr.io/techdive76/linux-mcp:latest python -m linux_mcp.auth
 # mcp_5b0e2c…(64 hex chars)
 ```
 
@@ -450,7 +461,7 @@ clients:
 
 ```bash
 docker compose restart
-curl -i -X POST http://localhost:8030/mcp \
+curl -i -X POST http://localhost:8000/mcp \
   -H "Authorization: Bearer mcp_5b0e2c…" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json, text/event-stream" \
@@ -581,7 +592,7 @@ Nginx example (SSE requires buffering off):
 
 ```nginx
 location /mcp {
-    proxy_pass http://127.0.0.1:8030/mcp;
+    proxy_pass http://127.0.0.1:8000/mcp;
     proxy_http_version 1.1;
     proxy_set_header Host $host;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -631,7 +642,7 @@ python -m venv .venv && source .venv/bin/activate
 pip install -e .
 cp .env.example .env            # then edit config/ and ssh/ as above
 set -a && source .env && set +a
-linux-mcp                  # listens on MCP_HOST:MCP_PORT (default 0.0.0.0:8030)
+linux-mcp                  # listens on MCP_HOST:MCP_PORT (default 0.0.0.0:8000)
 ```
 
 For a simple background service, use `scripts/startup.sh`, `scripts/status.sh` and
@@ -670,21 +681,50 @@ tags.
 
 ---
 
-## Security notes
+## Security
 
-- **The validator reduces risk; it is not a sandbox.** Pattern-based validation cannot catch every
+> [!CAUTION]
+> linux-mcp lets an AI run commands on your servers with the privileges of the configured SSH
+> user. Keep it inside your trusted network. Never publish it directly on the internet, and always
+> put HTTPS in front of it in production.
+
+### Built-in protections
+
+Every request to `/mcp` passes through these layers in order. A failure at any layer stops the
+request.
+
+| Layer | Protection | Where it is configured |
+|---|---|---|
+| **API key** | Every request must send a key in `Authorization: Bearer <key>` or `X-API-Key`. Keys in the query string are ignored, so they don't end up in proxy or browser logs. Keys are compared in constant time against every client, so response timing doesn't reveal which client matched. A missing or wrong key returns `401`. | `api_key` in `clients.yaml` |
+| **Strong, unique keys** | Keys must be at least 16 characters and unique across clients. The bundled generator produces `mcp_` + 64 hex chars from the OS random source. Invalid config stops the server at startup. | `linux-mcp-keygen` / `python -m linux_mcp.auth` |
+| **Client enable switch** | A client can be disabled without removing it. Its key then returns `401`. | `enabled` in `clients.yaml` |
+| **IP allow-list** | After the key matches, the caller's IP must be in that client's IP/CIDR list (IPv4 and IPv6). A valid key from any other address returns `403`. A stolen key is useless from outside the allowed range. | `ip` in `clients.yaml` |
+| **Spoof-proof client IP** | `X-Forwarded-For` / `X-Real-IP` are honored **only** when the direct peer is a trusted proxy. Otherwise they are ignored, so callers can't fake an allowed IP. Uvicorn's own proxy-header handling is turned off (`--no-proxy-headers`) so only this logic applies. | `TRUSTED_PROXIES` in `.env` |
+| **Server scoping** | A client only sees and uses the servers listed for it. Unknown names fail validation at startup. | `allowed_servers` in `clients.yaml` |
+| **Host IPs hidden** | Clients refer to servers by name only. Hostnames, IPs, usernames and key paths are never returned. | `servers.yaml` |
+| **Read/write separation** | `run_read_command` accepts only allow-listed diagnostic programs and blocks write, delete, service-control, privilege-escalation and subshell patterns. `run_write_command` is refused unless the server has `allow_write: true`, and catastrophic commands are blocked even then. | `allow_write` in `servers.yaml` |
+| **SSH host verification** | With strict mode on, connections to hosts not in `known_hosts` are refused, which prevents man-in-the-middle attacks. | `SSH_STRICT_HOST_KEYS=true` + `ssh/known_hosts` |
+| **Timeouts** | SSH connections and commands are cut off after the configured number of seconds. | `timeout` in `servers.yaml` |
+| **Minimal error disclosure** | Callers only get `Unauthorized` or `Forbidden`. The detailed reason is written to the server log only. | n/a |
+| **Audit trail** | Every request and command is logged as JSON with client alias, real client IP, server, command, exit code, output and duration, correlated by `request_id`. | `LOG_LEVEL`, `LOG_FILE` |
+| **Container hardening** | The image runs as a non-root user (UID 5678). Config and SSH keys are mounted **read-only**. Only `/health` is unauthenticated, and it returns nothing but `{"status": "ok"}`. | `Dockerfile`, compose files |
+
+### Recommendations
+
+- **Do not expose the service to the internet.** Bind or firewall the published port so only your
+  trusted network (or your reverse proxy) can reach it. reduces risk; it is not a sandbox.** Pattern-based validation cannot catch every
   harmful command. Use a dedicated, least-privileged SSH user (not `root`) wherever possible, and
   keep `allow_write: false` unless you need it.
 - Read-only commands like `cat`, `env` and `journalctl` can still **read secrets**. Choose the SSH
   user's file permissions with that in mind.
 - Enable `SSH_STRICT_HOST_KEYS=true` in production to prevent man-in-the-middle attacks.
-- Serve the endpoint over **HTTPS** (reverse proxy) when it leaves a trusted network. API keys are
-  bearer tokens.
+- Serve the endpoint over **HTTPS** through a reverse proxy such as nginx in production. The
+  server itself only speaks HTTP, and API keys are bearer tokens that anyone who intercepts them can
+  reuse.
 - Give each client its own key, the narrowest `ip` range possible, and `allowed_servers` when it
   doesn't need everything.
 - Prefer clients that ask for confirmation before `run_write_command`. The tool is annotated
   `destructiveHint: true` for this purpose.
-- Only `/health` is unauthenticated, and it returns nothing but `{"status": "ok"}`.
 
 If you find a security issue, please report it privately via GitHub Security Advisories rather than
 a public issue.
@@ -696,4 +736,10 @@ or blocked pattern should come with a test case in `tests/test_security.py`.
 
 ## License
 
-See [LICENSE](LICENSE).
+Licensed under the [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0).
+See [LICENSE](LICENSE) for the full text.
+
+Unless required by applicable law or agreed to in writing, software distributed under the License
+is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+implied. See the License for the specific language governing permissions and limitations under the
+License.

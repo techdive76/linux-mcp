@@ -20,7 +20,7 @@ def _parse_networks(value: str | list[str]) -> list[ipaddress.IPv4Network | ipad
 # ── Settings (environment) ─────────────────────────────────────────────────
 class AppSettings(BaseModel):
     host: str = "0.0.0.0"
-    port: int = 8030
+    port: int = 8000
     servers_config: Path = Path("./config/servers.yaml")
     clients_config: Path = Path("./config/clients.yaml")
     ssh_key_dir: Path = Path("./ssh")
@@ -37,7 +37,7 @@ class AppSettings(BaseModel):
     def from_env(cls) -> "AppSettings":
         return cls(
             host=os.getenv("MCP_HOST", "0.0.0.0"),
-            port=int(os.getenv("MCP_PORT", "8030")),
+            port=int(os.getenv("MCP_PORT", "8000")),
             servers_config=Path(os.getenv("SERVERS_CONFIG", "./config/servers.yaml")),
             clients_config=Path(os.getenv("CLIENTS_CONFIG", "./config/clients.yaml")),
             ssh_key_dir=Path(os.getenv("SSH_KEY_DIR", "./ssh")),

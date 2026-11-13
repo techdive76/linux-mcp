@@ -3,7 +3,7 @@ from langchain_mcp_adapters.client import MultiServerMCPClient
 
 client = MultiServerMCPClient({
     "linux-mcp": {
-        "url": "http://<mcp-host>:8030/mcp",
+        "url": "http://<mcp-host>:8000/mcp",
         "transport": "streamable_http",
         "headers": {"Authorization": f"Bearer {os.getenv('MCP_KEY_AGENT')}"},
     }

@@ -6,7 +6,7 @@ cd "$(dirname "$0")/.." || exit 1
 # ── Config ─────────────────────────────────────────────────────────────────
 APP_MODULE="linux_mcp.server:starlette_app"
 HOST="0.0.0.0"
-PORT=8030
+PORT=8000
 LOG_FILE="mcp.log"
 PID_FILE="server.pid"
 

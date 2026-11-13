@@ -51,7 +51,7 @@ python -m linux_mcp.auth     # or: linux-mcp-keygen
 ```bash
 docker compose up -d --build
 docker compose logs -f
-curl http://localhost:8030/health
+curl http://localhost:8000/health
 ```
 
 Configuration is read once at startup. After you edit `config/*.yaml`, run `docker compose restart`.
@@ -67,7 +67,7 @@ Nginx example (SSE needs buffering off):
 
 ```nginx
 location /mcp {
-    proxy_pass http://127.0.0.1:8030/mcp;
+    proxy_pass http://127.0.0.1:8000/mcp;
     proxy_http_version 1.1;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Real-IP $remote_addr;

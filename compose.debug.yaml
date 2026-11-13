@@ -13,5 +13,5 @@ services:
       - ${CONFIG_DIR:-./config}:/config:ro
       - ${SSH_DIR:-./ssh}:/ssh:ro
     ports:
-      - "${HOST_PORT:-8030}:8000"
+      - "${HOST_PORT:-8000}:8000"
       - 5678:5678

@@ -6,6 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "linux-mcp"
 description = "MCP server for running validated diagnostic commands on remote Linux servers over SSH"
 requires-python = ">=3.12"
+license = { text = "Apache-2.0" }
 dynamic = ["version", "dependencies"]
 
 [project.optional-dependencies]
