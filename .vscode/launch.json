@@ -1,0 +1,19 @@
+{
+    "configurations": [
+        {
+            "name": "Containers: Python - Fastapi",
+            "type": "docker",
+            "request": "launch",
+            "preLaunchTask": "docker-run: debug",
+            "python": {
+                "pathMappings": [
+                    {
+                        "localRoot": "${workspaceFolder}/src/linux_mcp",
+                        "remoteRoot": "/usr/local/lib/python3.12/site-packages/linux_mcp"
+                    }
+                ],
+                "projectType": "fastapi"
+            }
+        }
+    ]
+}

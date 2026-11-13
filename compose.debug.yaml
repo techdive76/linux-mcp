@@ -1,0 +1,17 @@
+services:
+  linux-mcp:
+    image: linux-mcp:debug
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    command: ["sh", "-c", "pip install debugpy -t /tmp && python /tmp/debugpy --wait-for-client --listen 0.0.0.0:5678 -m uvicorn linux_mcp.server:starlette_app --host 0.0.0.0 --port 8000 --no-proxy-headers"]
+    environment:
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-}
+      SSH_STRICT_HOST_KEYS: ${SSH_STRICT_HOST_KEYS:-false}
+      LOG_LEVEL: DEBUG
+    volumes:
+      - ${CONFIG_DIR:-./config}:/config:ro
+      - ${SSH_DIR:-./ssh}:/ssh:ro
+    ports:
+      - "${HOST_PORT:-8030}:8000"
+      - 5678:5678

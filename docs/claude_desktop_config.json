@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "linux-mcp": {
+      "type": "http",
+      "url": "http://<mcp-host>:8030/mcp",
+      "headers": {
+        "Authorization": "Bearer mcp_<your-client-api-key>"
+      }
+    }
+  }
+}

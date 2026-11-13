@@ -1,0 +1,12 @@
+__pycache__/
+.venv/
+*.pid
+*.log
+.env
+config/*.yaml
+!config/*.example.yaml
+ssh/*
+!ssh/README.txt
+build/
+*.egg-info/
+.pytest_cache/

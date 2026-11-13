@@ -1,0 +1,29 @@
+# Production: runs the image published by .github/workflows/ci.yml
+#   docker login ghcr.io            # only needed if the package is private
+#   docker compose -f docker-compose.prod.yml pull
+#   docker compose -f docker-compose.prod.yml up -d
+services:
+  linux-mcp:
+    image: ${APP_IMAGE:-ghcr.io/arabsat-hub/linux-mcp:latest}
+    container_name: linux-mcp
+    pull_policy: always
+    restart: unless-stopped
+    ports:
+      - "${HOST_PORT:-8030}:8000"
+    environment:
+      SERVERS_CONFIG: /config/servers.yaml
+      CLIENTS_CONFIG: /config/clients.yaml
+      SSH_KEY_DIR: /ssh
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-}
+      SSH_STRICT_HOST_KEYS: ${SSH_STRICT_HOST_KEYS:-false}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      ACCESS_LOG_FORMAT: ${ACCESS_LOG_FORMAT:-json}          # json | plain (uvicorn standard)
+      LOG_MAX_OUTPUT_CHARS: ${LOG_MAX_OUTPUT_CHARS:-10000}   # JSON logs go to stdout (docker logs)
+    volumes:
+      - ${CONFIG_DIR:-./config}:/config:ro   # servers.yaml + clients.yaml
+      - ${SSH_DIR:-./ssh}:/ssh:ro            # private keys (+ optional known_hosts)
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

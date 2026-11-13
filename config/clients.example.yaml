@@ -1,0 +1,23 @@
+# MCP clients allowed to call this server.
+# A request is accepted only if BOTH the API key and the client IP match an enabled client.
+#
+#   alias            name used in logs / audit trail
+#   api_key          generate with: python -m linux_mcp.auth
+#   ip               single IP/CIDR or a list. For Claude / OpenAI API-hosted MCP connectors,
+#                    list the provider's published egress IP ranges.
+#   enabled          false = reject this client
+#   allowed_servers  optional list of server names; omit to allow all servers
+
+clients:
+  - alias: claude-desktop
+    api_key: mcp_replace_with_generated_key_000000000000000000000000000000000000
+    ip: 10.10.5.20
+    enabled: true
+
+  - alias: langchain-agent
+    api_key: mcp_replace_with_generated_key_111111111111111111111111111111111111
+    ip:
+      - 10.10.6.0/24
+      - 192.168.1.15
+    enabled: true
+    allowed_servers: [test-app01]

@@ -1,0 +1,24 @@
+# Remote Linux servers the MCP server may SSH into.
+# Clients only ever see `name`, `description` and `allow_write` — never `host`.
+#
+# `defaults` apply to every server unless overridden per server.
+# key_file is resolved relative to SSH_KEY_DIR (/ssh in the container) unless absolute.
+
+defaults:
+  username: root
+  port: 22
+  key_file: id_rsa
+  timeout: 30
+
+servers:
+  - name: prod-db01                 # value the AI passes as the `server` argument
+    host: 10.0.0.10
+    description: "Production database node"
+    allow_write: false
+
+  - name: test-app01
+    host: 10.0.0.20
+    description: "Test application server"
+    allow_write: true               # enables run_write_command (still validated against harmful commands)
+    username: admin                 # per-server overrides: username / port / key_file / timeout
+    key_file: test_app01_ed25519

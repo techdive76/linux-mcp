@@ -1,0 +1,17 @@
+# Health (no auth)
+curl http://localhost:8030/health
+
+# Initialize an MCP session (auth via Bearer or X-API-Key header; query-string keys are NOT accepted)
+curl -i -X POST http://localhost:8010/mcp \
+  -H "Authorization: Bearer mcp_<your-client-api-key>" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"curl","version":"1"}}}'
+
+# Then reuse the returned Mcp-Session-Id header for later calls, e.g.:
+curl -X POST http://localhost:8010/mcp \
+  -H "Authorization: Bearer mcp_<your-client-api-key>" \
+  -H "Mcp-Session-Id: <id-from-initialize>" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"run_read_command","arguments":{"server":"linux-01","command":"df -h"}}}'

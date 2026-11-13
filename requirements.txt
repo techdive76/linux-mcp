@@ -1,0 +1,6 @@
+uvicorn[standard]>=0.30
+starlette>=0.37
+paramiko>=3.4
+mcp>=1.10,<2
+pydantic>=2.6
+PyYAML>=6.0

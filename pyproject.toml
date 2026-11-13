@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "linux-mcp"
+description = "MCP server for running validated diagnostic commands on remote Linux servers over SSH"
+requires-python = ">=3.12"
+dynamic = ["version", "dependencies"]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[project.scripts]
+linux-mcp = "linux_mcp.server:main"
+linux-mcp-keygen = "linux_mcp.auth:main"
+
+[tool.setuptools.dynamic]
+version = { attr = "linux_mcp.__version__" }
+dependencies = { file = ["requirements.txt"] }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
