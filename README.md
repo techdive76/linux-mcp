@@ -67,7 +67,7 @@ server (SQL access to the APPS schema), so a single request can cover both layer
 - *"Why are concurrent requests stuck?"* correlates manager OS processes and `$APPLCSF` logs on
   the apps node with `FND_CONCURRENT_REQUESTS` / `FND_CONCURRENT_PROCESSES` and blocking sessions
   in the database.
-- *"Free up disk on appnode"* diagnoses with read-only commands first, then proposes the exact
+- *"Free up disk space on appnode"* diagnoses with read-only commands first, then proposes the exact
   cleanup commands and runs them through `run_write_command` only after you confirm.
 
 What makes it work well:
