@@ -11,7 +11,7 @@ is written to a structured JSON audit log.
 ```
 ┌──────────────┐  HTTPS + API key   ┌──────────────────────┐   SSH (key auth)   ┌──────────────┐
 │  AI client   │ ─────────────────▶ │   linux-mcp          │ ─────────────────▶ │ Linux server │
-│ Claude, GPT, │   /mcp endpoint    │ auth → IP check →    │                    │ prod-db01    │
+│ Claude, GPT, │   /mcp endpoint     │ auth → IP check →   │                     │ prod-db01    │
 │ LangChain …  │ ◀───────────────── │ validator → audit    │ ◀───────────────── │ test-app01 … │
 └──────────────┘                    └──────────────────────┘                    └──────────────┘
 ```
@@ -47,22 +47,60 @@ is written to a structured JSON audit log.
   tools and still ask before running write commands.
 - Ships as a small, non-root Docker image with a health check.
 
+## Use cases
+
+linux-mcp is most powerful when it is wired into an **agent** that knows your platform. The
+server gives the model safe, audited hands on your machines; the agent adds the domain
+knowledge: which node to check, how to source the environment, what "healthy" looks like, and
+when to stop and ask before changing something.
+
+### Featured example: Oracle E-Business Suite agent
+
+[`examples/agents/oracle-ebs-agent`](examples/agents/oracle-ebs-agent/SKILL.md) is a Claude
+skill that turns Claude into an Oracle EBS 12.2 DBA / apps-admin assistant for a TEST
+environment. It combines linux-mcp (OS access to the apps and database nodes) with the SQLcl MCP
+server (SQL access to the APPS schema), so a single request can cover both layers:
+
+- *"Is TEST healthy?"* runs `get_system_snapshot` on both nodes, checks listeners, apps services
+  and concurrent managers, scans the DB alert log, and queries tablespace usage and invalid
+  objects. The answer is one report that flags anything abnormal.
+- *"Why are concurrent requests stuck?"* correlates manager OS processes and `$APPLCSF` logs on
+  the apps node with `FND_CONCURRENT_REQUESTS` / `FND_CONCURRENT_PROCESSES` and blocking sessions
+  in the database.
+- *"Free up disk on appnode"* diagnoses with read-only commands first, then proposes the exact
+  cleanup commands and runs them through `run_write_command` only after you confirm.
+
+What makes it work well:
+
+- **Domain routing.** The skill knows which tier owns which component (OHS/WebLogic/adop on the
+  apps node, alert log/listener/RMAN on the DB node) and picks the server name accordingly.
+- **Correct environment handling.** Commands run as the EBS owner with the right `.env` sourced,
+  in the non-interactive form linux-mcp requires.
+- **Layered safety.** linux-mcp's validator, per-server `allow_write` and audit log are combined
+  with the agent's own rule to confirm every write command and every DDL/DML before it runs.
+- **Bounded output.** It uses `tail`, `grep -m` and similar so large logs never flood the model.
+
+Use it as a template: copy the folder into your skills directory, adjust the node names, SID,
+paths and connection names, and point it at your own linux-mcp server. The same pattern works for
+any platform with a runbook, for example SAP, Kubernetes nodes, web stacks or backup servers.
+
 ## Table of contents
 
-1. [Quick start (Docker)](#quick-start-docker)
-2. [MCP tools](#mcp-tools)
-3. [Environment variables](#environment-variables)
-4. [Configuration files](#configuration-files)
+1. [Use cases](#use-cases)
+2. [Quick start (Docker)](#quick-start-docker)
+3. [MCP tools](#mcp-tools)
+4. [Environment variables](#environment-variables)
+5. [Configuration files](#configuration-files)
    - [servers.yaml](#configservers-yaml)
    - [clients.yaml](#configclients-yaml)
-5. [Step-by-step: add a new server](#step-by-step-add-a-new-server)
-6. [Step-by-step: add a new client](#step-by-step-add-a-new-client)
-7. [Connecting AI clients](#connecting-ai-clients)
-8. [Running behind a reverse proxy](#running-behind-a-reverse-proxy)
-9. [Logging and auditing](#logging-and-auditing)
-10. [Running without Docker](#running-without-docker)
-11. [Development](#development)
-12. [Security](#security)
+6. [Step-by-step: add a new server](#step-by-step-add-a-new-server)
+7. [Step-by-step: add a new client](#step-by-step-add-a-new-client)
+8. [Connecting AI clients](#connecting-ai-clients)
+9. [Running behind a reverse proxy](#running-behind-a-reverse-proxy)
+10. [Logging and auditing](#logging-and-auditing)
+11. [Running without Docker](#running-without-docker)
+12. [Development](#development)
+13. [Security](#security)
 
 ---
 
@@ -672,6 +710,7 @@ config/              *.example.yaml templates
 ssh/                 your keys (git-ignored)
 docs/                deployment guide, client config samples
 examples/            Python MCP client example
+examples/agents/     example agent skills built on linux-mcp (Oracle EBS)
 tests/               pytest suite
 ```
 
@@ -712,7 +751,8 @@ request.
 ### Recommendations
 
 - **Do not expose the service to the internet.** Bind or firewall the published port so only your
-  trusted network (or your reverse proxy) can reach it. reduces risk; it is not a sandbox.** Pattern-based validation cannot catch every
+  trusted network (or your reverse proxy) can reach it.
+- **The validator reduces risk; it is not a sandbox.** Pattern-based validation cannot catch every
   harmful command. Use a dedicated, least-privileged SSH user (not `root`) wherever possible, and
   keep `allow_write: false` unless you need it.
 - Read-only commands like `cat`, `env` and `journalctl` can still **read secrets**. Choose the SSH
